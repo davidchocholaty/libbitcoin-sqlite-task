@@ -1,13 +1,23 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 project(SQLiteApp)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 
 find_package(SQLite3 REQUIRED)
-include_directories(${SQLite3_INCLUDE_DIRS})
-message(STATUS "SQLite3 library path: ${SQLite3_LIBRARIES}")
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
-add_executable(app main.cpp)
+if(SQLite3_FOUND AND Boost_FOUND)    
+    message(STATUS "SQLite3 library path: ${SQLite3_LIBRARIES}")
+    message(STATUS "Boost found: ${Boost_VERSION}")
 
-target_link_libraries(app ${SQLite3_LIBRARIES})
+    include_directories(${SQLite3_INCLUDE_DIRS})
+    include_directories(${Boost_INCLUDE_DIRS})
+
+    add_executable(app main.cpp)
+
+    target_link_libraries(app Boost::filesystem)
+    target_link_libraries(app ${SQLite3_LIBRARIES})
+else()
+    message(FATAL_ERROR "Required dependencies (SQLite3 or Boost) not found. Please install missing dependencies.")
+endif()
