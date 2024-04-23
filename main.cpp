@@ -13,7 +13,8 @@ enum error_code
     no_error = 0,
     db_create_error = 1,
     table_create_error = 2,
-    unknown_error = 3
+    table_insert_error = 3,
+    unknown_error = 4
 };
 
 // Create a callback function  
@@ -35,7 +36,7 @@ bool database_exists(const std::string& db_filename)
 }
 
 bool create_database(const std::string& db_filename, sqlite3** p_db)
-{    
+{
     char* err_msg = 0;
 
     // Check if the database already exists. If yes, delete the database.
@@ -76,7 +77,6 @@ bool create_database(const std::string& db_filename, sqlite3** p_db)
 bool create_table(const std::string table_name, const std::string table_columns, sqlite3** p_db)
 {
     char* err_msg = 0;
-    // TODO asi smazat tabulku, pokud uz bude vytvorena, aby to nehazelo error.
 
     /* Create SQL statement */
     /*
@@ -142,19 +142,42 @@ bool create_table(const std::string table_name, const std::string table_columns,
     return true;
 }
 
+bool insert_table_record(const std::string table_name, const std::string table_columns_names, const std::string columns_values, sqlite3** p_db)
+{
+    // TODO kontrola jestli uz neexistuje v tabulce
+    char* err_msg = 0;
+    const std::string insert_record_sql = "INSERT INTO " + table_name + " (" + table_columns_names + ") VALUES (" + columns_values + ");";
+
+    int status = sqlite3_exec(*p_db, insert_record_sql.c_str(), nullptr, nullptr, &err_msg);
+
+    if (status != SQLITE_OK) {
+        std::cerr << "Error: inserting record into the " << table_name << " table.\n";
+        std::cerr << "Error message: " << err_msg << "\n";
+            return false;
+    }
+
+    std::cout << "Info: The record was inserted successfully into the " << table_name << " table.\n";
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+// TODO database delete and table delete
+
 int main(int argc, char** argv)
 {
     sqlite3* p_db = nullptr;
     const std::string db_filename = "dbschema.db";
 
-    bool creation_succ = create_database(db_filename, &p_db);
+    bool success = create_database(db_filename, &p_db);
 
-    if (!creation_succ)
+    if (!success)
     {
         return error_code::db_create_error;
     }
 
     const std::string table_name = "Staff";
+    //TODO ze email a phonenum musi byt unique
     const std::string table_columns =
         "ID INTEGER PRIMARY KEY           AUTOINCREMENT," \
         "FirstName          VARCHAR(255)  NOT NULL," \
@@ -166,11 +189,22 @@ int main(int argc, char** argv)
         "PhoneNum           VARCHAR(20)   NOT NULL," \
         "TimeZone           VARCHAR(50)            ";
 
-    creation_succ = create_table(table_name, table_columns, &p_db);
+    success = create_table(table_name, table_columns, &p_db);
 
-    if (!creation_succ)
+    if (!success)
     {
         return error_code::table_create_error;
+    }
+
+    const std::string table_columns_names = "FirstName, Address, Salary, LastName, Email, ProfileImage, PhoneNum, TimeZone";
+
+    const std::string columns_values = "'Kenneth','3793 Columbia Mine Road',3200,'Prevost','kenneth@hello-world.com','staff/profiles/kenneth/avatar.png','255-48-5875','PST'";
+
+    success = insert_table_record(table_name, table_columns_names, columns_values, &p_db);
+
+    if (!success)
+    {
+        return error_code::table_insert_error;
     }
 
     sqlite3_close(p_db);
