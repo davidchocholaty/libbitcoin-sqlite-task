@@ -1,4 +1,5 @@
 #include <boost/filesystem.hpp>
+#include <cstdlib> // std::remove
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -20,8 +21,9 @@ enum error_code
     table_create_error = 2,
     table_insert_error = 3,
     sqlite_generic_error = 4,
-    file_open_error = 5,    
-    unknown_error = 6
+    table_deletion_error = 5,
+    file_open_error = 6,
+    unknown_error = 7
 };
 
 bool headers_printed_flag = false;
@@ -29,7 +31,7 @@ bool headers_printed_flag = false;
 // Create a callback function  
 /* https://videlais.com/2018/12/12/c-with-sqlite3-part-2-creating-tables/ */
 // TODO rename parametry
-int callback(void *NotUsed, int argc, char **argv, char **azColName)
+int callback(void* data, int argc, char** argv, char** az_col_name)
 {
 
 
@@ -46,8 +48,6 @@ bool database_exists(const std::string& db_filename)
 
 bool create_database(const std::string& db_filename, sqlite3** p_db)
 {
-    char* err_msg = nullptr;
-
     // Check if the database already exists. If yes, delete the database.
     if (database_exists(db_filename))
     {
@@ -136,6 +136,7 @@ bool create_table(const std::string table_name, const std::string table_columns,
         {
             std::cerr << "Error: executing SQL statement failed (table creation).\n";
             std::cerr << "Error message: " << err_msg << "\n";
+            sqlite3_free(err_msg);
             return false;
         }
 
@@ -233,6 +234,7 @@ bool insert_table_record(const std::string table_name, const std::string table_c
         if (status != SQLITE_OK) {
             std::cerr << "Error: inserting record into the " << table_name << " table.\n";
             std::cerr << "Error message: " << err_msg << "\n";
+            sqlite3_free(err_msg);
             return false;
         }
 
@@ -244,7 +246,7 @@ bool insert_table_record(const std::string table_name, const std::string table_c
     return true;
 }
 
-int callback_print(void *data, int argc, char **argv, char **az_col_name)
+int callback_print(void* data, int argc, char** argv, char** az_col_name)
 {
     // Print column names.
     if (!headers_printed_flag)
@@ -266,7 +268,6 @@ int callback_print(void *data, int argc, char **argv, char **az_col_name)
     }
 
     std::cout << "\n";
-
     return 0;
 }
 
@@ -281,6 +282,7 @@ bool print_table(const std::string table_name, sqlite3** p_db)
     {
         std::cerr << "Error: table " << table_name << " select failed.\n";
         std::cerr << "Error message: " << err_msg << "\n";
+        sqlite3_free(err_msg);
         return false;
     }
 
@@ -289,15 +291,273 @@ bool print_table(const std::string table_name, sqlite3** p_db)
     return true;
 }
 
-// TODO database delete and table delete
+int callback_salary(void* data, int argc, char** argv, char** az_col_name)
+{   
+    // Print column names.
+    if (!headers_printed_flag)
+    {
+        for (int i = 0; i < argc; ++i)
+        {
+            std::cout << az_col_name[i] << " | ";
+        }
 
+        std::cout << "\n\n";        
+
+        headers_printed_flag = true;
+    }
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::cout << (argv[i] ? argv[i] : "NULL") << " | ";
+    }
+
+    std::cout << "\n";
+    return 0;
+}
+
+bool select_salary_threshold(const std::string table_name, int threshold, sqlite3** p_db)
+{
+    char* err_msg = nullptr;
+    const std::string select_salary_sql = "SELECT * FROM " + table_name + " WHERE Salary >= " + std::to_string(threshold) + ";";    
+
+    int status = sqlite3_exec(*p_db, select_salary_sql.c_str(), callback_salary, nullptr, &err_msg);
+
+    if (status != SQLITE_OK)
+    {
+        std::cerr << "Error: executing SQL statement failed (salaries query).\n";
+        std::cerr << "Error message: " << err_msg << "\n";
+        sqlite3_free(err_msg);
+        return false;
+    }
+
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+int callback_last_name(void* data, int argc, char** argv, char** az_col_name)
+{
+    // Print column names.
+    if (!headers_printed_flag)
+    {
+        for (int i = 0; i < argc; ++i)
+        {
+            std::cout << az_col_name[i] << " | ";
+        }
+
+        std::cout << "\n\n";        
+
+        headers_printed_flag = true;
+    }
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::cout << (argv[i] ? argv[i] : "NULL") << " | ";
+    }
+
+    std::cout << "\n";
+    return 0;
+}
+
+bool select_by_last_name(const std::string table_name, const std::string last_name, sqlite3** p_db)
+{
+    char* err_msg = nullptr;
+    const std::string select_name_sql = "SELECT * FROM " + table_name + " WHERE LastName = '" + last_name + "';";
+
+    int status = sqlite3_exec(*p_db, select_name_sql.c_str(), callback_last_name, nullptr, &err_msg);
+
+    if (status != SQLITE_OK)
+    {
+        std::cerr << "Error: executing SQL statement failed (last name query).\n";
+        std::cerr << "Error message: " << err_msg << "\n";
+        sqlite3_free(err_msg);
+        return false;
+    }
+
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+int callback_phone_number(void* data, int argc, char** argv, char** az_col_name)
+{
+    if (argc > 0 && argv[0] != nullptr)
+    {
+        *static_cast<int*>(data) = std::stoi(argv[0]);
+    }
+
+    return 0;
+}
+
+bool update_phone_number(const std::string table_name, const int person_id, const std::string new_phone_number, sqlite3** p_db)
+{
+    char* err_msg = nullptr;
+
+    const std::string check_phone_sql = "SELECT COUNT(*) FROM " + table_name + " WHERE PhoneNum = '" + new_phone_number + "';";
+    int count = 0;
+
+    int status = sqlite3_exec(*p_db, check_phone_sql.c_str(), callback_phone_number, &count, &err_msg);
+
+    if (status != SQLITE_OK)
+    {
+        std::cerr << "Error: executing SQL statement failed (phone number check).\n";
+        std::cerr << "Error message: " << err_msg << "\n";
+        sqlite3_free(err_msg);
+        return false;
+    }
+
+    if (count == 0)
+    {
+        // The new phone number does not exist in the table, perform the update.
+        std::string update_sql = "UPDATE " + table_name + " SET PhoneNum = '" + new_phone_number + "' WHERE ID = " + std::to_string(person_id) + ";";
+
+        status = sqlite3_exec(*p_db, update_sql.c_str(), nullptr, nullptr, &err_msg);
+
+        if (status != SQLITE_OK)
+        {
+            std::cerr << "Error: executing SQL statement failed (phone number update).\n";
+            std::cerr << "Error message: " << err_msg << "\n";
+            sqlite3_free(err_msg);
+            return false;
+        }
+
+        std::cout << "Info: phone number updated successfully.\n";
+    }
+    else
+    {
+        // The phone number is already in the table.
+        std::cout << "Phone number already exists in the table. Update aborted." << std::endl;
+    }
+
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+bool drop_table(const std::string table_name, sqlite3** p_db)
+{
+    char* err_msg = nullptr;
+    const std::string drop_sql = "DROP TABLE IF EXISTS " + table_name + ";";
+
+    int status = sqlite3_exec(*p_db, drop_sql.c_str(), nullptr, nullptr, &err_msg);
+
+    if (status != SQLITE_OK)
+    {
+        std::cerr << "Error: executing SQL statement failed (table drop).\n";
+        std::cerr << "Error message: " << err_msg << "\n";
+        sqlite3_free(err_msg);
+        return false;
+    }
+
+    std::cout << "Info: Table dropped successfully.\n";
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+bool delete_database(const std::string db_filename)
+{
+    if (std::remove(db_filename.c_str()) == 0)
+    {
+        std::cout << "Info: Database file '" << db_filename << "' deleted successfully.\n";
+    }
+    else
+    {
+        std::cerr << "Error: deleting database file '" << db_filename << "' failed.\n";
+        return false;
+    }
+
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+int run_queries(const std::string table_name, const std::string table_columns_names, sqlite3** p_db)
+{
+    /* QUERIES */
+    /* Staff with a salary greater or equal to 3500. */
+    int threshold = 3500;
+
+    // Set the flag to false so the table headers will be printed for the first time.
+    headers_printed_flag = false;
+
+    std::cout << "The staff with a salary greater or equal to " << threshold << ":\n\n";
+    int success = select_salary_threshold(table_name, threshold, p_db);
+
+    if (!success)
+    {
+        return error_code::sqlite_generic_error;
+    }
+
+    /* Insert a person with the same last name as the person who already is in the table. */
+    std::cout << "Insert person Leonard Sloan into the table:\n\n";
+    const std::string table_record = "'Leonard','1688 Strawberry Street',2800,'Sloan','leonard@hello-world.com','staff/profiles/leonard/avatar.png','672-48-1451','PST'";
+    success = insert_table_record(table_name, table_columns_names, table_record, p_db);
+
+    if (!success)
+    {
+        return error_code::table_insert_error;
+    }
+
+    // Set the flag to false so the table headers will be printed for the first time.
+    headers_printed_flag = false;
+
+    success = print_table(table_name, p_db);
+
+    if (!success)
+    {
+        return error_code::sqlite_generic_error;
+    }
+
+    /* Print all person which has the LastName = Sloan. */
+
+    // Set the flag to false so the table headers will be printed for the first time.
+    headers_printed_flag = false;
+
+    std::cout << "The staff with a \"Sloan\" last name:\n\n";
+
+    const std::string last_name = "Sloan";
+    success = select_by_last_name(table_name, last_name, p_db);
+
+    if (!success)
+    {
+        return error_code::sqlite_generic_error;
+    }
+
+    /* Update the phone number for a person with ID = 1. */
+    std::cout << "Update the phone number for a person with ID = 1. New phone number: 666-55-4444:\n\n";
+
+    success = update_phone_number(table_name, 1, "666-55-4444", p_db);
+
+    if (!success)
+    {
+        return error_code::sqlite_generic_error;
+    }
+
+    // Set the flag to false so the table headers will be printed for the first time.
+    headers_printed_flag = false;
+
+    success = print_table(table_name, p_db);
+
+    if (!success)
+    {
+        return error_code::sqlite_generic_error;
+    }
+
+    return error_code::no_error;
+}
+
+// TODO funkce cleanup ktera provede vsechny uzavreni (db a souboru) a odstraneni tabulky a databaze. Pro validni i chybove ukonceni.
+// TODO ulozit do txt souboru finalni presmerovane vystup, at to nemusi spoustet.
+// TODO required sqlite a boost do README
 int main(int argc, char** argv)
 {
     sqlite3* p_db = nullptr;
     const std::string db_filename = "dbschema.db";
     std::ifstream file("../people.csv");
 
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         std::cerr << "Error: CSV file opening failed.\n";
         return error_code::file_open_error;
     }
@@ -306,6 +566,9 @@ int main(int argc, char** argv)
 
     if (!success)
     {
+        sqlite3_close(p_db);
+        p_db = nullptr;
+
         file.close();
         return error_code::db_create_error;
     }
@@ -326,6 +589,9 @@ int main(int argc, char** argv)
 
     if (!success)
     {
+        sqlite3_close(p_db);
+        p_db = nullptr;
+
         file.close();
         return error_code::table_create_error;
     }
@@ -341,6 +607,9 @@ int main(int argc, char** argv)
 
         if (!success)
         {
+            sqlite3_close(p_db);
+            p_db = nullptr;
+
             file.close();
             return error_code::table_insert_error;
         }
@@ -348,12 +617,50 @@ int main(int argc, char** argv)
 
     success = print_table(table_name, &p_db);
 
-    if (!success) {
+    if (!success)
+    {
+        sqlite3_close(p_db);
+        p_db = nullptr;
+
+        file.close();
+        return error_code::sqlite_generic_error;
+    }
+
+    // Run queries.
+
+    int err = run_queries(table_name, table_columns_names, &p_db);
+
+    if (err != error_code::no_error)
+    {
+        sqlite3_close(p_db);
+        p_db = nullptr;
+
+        file.close();
+        return error_code::sqlite_generic_error;
+    }
+
+    success = drop_table(table_name, &p_db);
+    
+    if (!success)
+    {
+        sqlite3_close(p_db);
+        p_db = nullptr;
+
         file.close();
         return error_code::sqlite_generic_error;
     }
 
     sqlite3_close(p_db);
+    p_db = nullptr;
+
+    success = delete_database(db_filename);
+
+    if (!success)
+    {
+        file.close();
+        return error_code::table_deletion_error;
+    }
+
     file.close();
 
     return error_code::no_error;
