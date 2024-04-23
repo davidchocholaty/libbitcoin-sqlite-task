@@ -5,7 +5,10 @@
 #include <string>
 #include <sqlite3.h>
 
-/* https://www.visual-paradigm.com/features/database-design-with-erd-tools/ */
+constexpr int k_expected_cols = 8;
+constexpr int k_first_name_idx = 0;
+constexpr int k_last_name_idx = 3;
+constexpr int k_phone_num_idx = 6;
 
 /**
  * The error codes enumeration for the whole program.
@@ -16,9 +19,12 @@ enum error_code
     db_create_error = 1,
     table_create_error = 2,
     table_insert_error = 3,
-    file_open_error = 4,
-    unknown_error = 5
+    sqlite_generic_error = 4,
+    file_open_error = 5,    
+    unknown_error = 6
 };
+
+bool headers_printed_flag = false;
 
 // Create a callback function  
 /* https://videlais.com/2018/12/12/c-with-sqlite3-part-2-creating-tables/ */
@@ -40,7 +46,7 @@ bool database_exists(const std::string& db_filename)
 
 bool create_database(const std::string& db_filename, sqlite3** p_db)
 {
-    char* err_msg = 0;
+    char* err_msg = nullptr;
 
     // Check if the database already exists. If yes, delete the database.
     if (database_exists(db_filename))
@@ -79,7 +85,7 @@ bool create_database(const std::string& db_filename, sqlite3** p_db)
 
 bool create_table(const std::string table_name, const std::string table_columns, sqlite3** p_db)
 {
-    char* err_msg = 0;
+    char* err_msg = nullptr;
 
     /* Create SQL statement */
     /*
@@ -102,6 +108,7 @@ bool create_table(const std::string table_name, const std::string table_columns,
     if (status != SQLITE_OK)
     {
         std::cerr << "Error: preparing SQL statement failed (table existence check).\n";
+        std::cerr << "Error message: " << sqlite3_errmsg(*p_db) << "\n";
         return false;
     }
 
@@ -145,21 +152,138 @@ bool create_table(const std::string table_name, const std::string table_columns,
     return true;
 }
 
-bool insert_table_record(const std::string table_name, const std::string table_columns_names, const std::string columns_values, sqlite3** p_db)
+std::vector<std::string> parse_csv_line(const std::string& line)
 {
-    // TODO kontrola jestli uz neexistuje v tabulce
-    char* err_msg = 0;
-    const std::string insert_record_sql = "INSERT INTO " + table_name + " (" + table_columns_names + ") VALUES (" + columns_values + ");";
+    std::vector<std::string> cols;
+    std::stringstream ss(line);
+    std::string col;
 
-    int status = sqlite3_exec(*p_db, insert_record_sql.c_str(), nullptr, nullptr, &err_msg);
+    while (std::getline(ss, col, ','))
+    {
+        size_t start = col.find_first_not_of(" \t\n\r'");
+        size_t end = col.find_last_not_of(" \t\n\r'");
 
-    if (status != SQLITE_OK) {
-        std::cerr << "Error: inserting record into the " << table_name << " table.\n";
-        std::cerr << "Error message: " << err_msg << "\n";
-            return false;
+        if (start != std::string::npos && end != std::string::npos) {
+            cols.push_back(col.substr(start, end - start + 1));
+        } else {
+            cols.push_back("");
+        }
     }
 
-    std::cout << "Info: The record was inserted successfully into the " << table_name << " table.\n";
+    return cols;
+}
+
+bool person_exists(const std::string table_name, const std::string columns_values, sqlite3** p_db)
+{
+    const std::string select_person_sql = "SELECT COUNT(*) FROM " + table_name + " WHERE FirstName = ? AND LastName = ? AND PhoneNum = ?;";
+    
+    sqlite3_stmt* stmt;
+    int status = sqlite3_prepare_v2(*p_db, select_person_sql.c_str(), -1, &stmt, nullptr);
+
+    if (status != SQLITE_OK)
+    {
+        std::cerr << "Error: preparing SQL statement failed (person existence check).\n";
+        std::cerr << "Error message: " << sqlite3_errmsg(*p_db) << "\n";
+        return false;
+    }
+
+    std::vector<std::string> cols = parse_csv_line(columns_values);
+
+    if (cols.size() != k_expected_cols) {
+        std::cerr << "Error: unexpected number of columns.\n";
+        return false;
+    }
+
+    const std::string first_name = cols[k_first_name_idx];
+    const std::string last_name = cols[k_last_name_idx];
+    const std::string phone_num = cols[k_phone_num_idx];
+
+    // Bind parameters.
+    sqlite3_bind_text(stmt, 1, first_name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, last_name.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, phone_num.c_str(), -1, SQLITE_STATIC);
+
+    status = sqlite3_step(stmt);
+
+    if (status != SQLITE_ROW) {
+        std::cerr << "Error: executing SQL statement failed (person existence check).\n";
+        return false;
+    }
+
+    int person_count = sqlite3_column_int(stmt, 0);
+    sqlite3_finalize(stmt);
+
+    return (person_count > 0);
+}
+
+bool insert_table_record(const std::string table_name, const std::string table_columns_names, const std::string columns_values, sqlite3** p_db)
+{
+    // Check if the person exists in the table.
+    if (person_exists(table_name, columns_values, p_db))
+    {
+        std::cout << "The inserted person already exists.\n";
+    }
+    else
+    {
+        char* err_msg = nullptr;
+        const std::string insert_record_sql = "INSERT INTO " + table_name + " (" + table_columns_names + ") VALUES (" + columns_values + ");";
+
+        int status = sqlite3_exec(*p_db, insert_record_sql.c_str(), nullptr, nullptr, &err_msg);
+
+        if (status != SQLITE_OK) {
+            std::cerr << "Error: inserting record into the " << table_name << " table.\n";
+            std::cerr << "Error message: " << err_msg << "\n";
+            return false;
+        }
+
+        std::cout << "Info: The record was inserted successfully into the " << table_name << " table.\n";
+    }
+    
+    std::cout << "-----------------------------------------------------------------------\n";
+
+    return true;
+}
+
+int callback_print(void *data, int argc, char **argv, char **az_col_name)
+{
+    // Print column names.
+    if (!headers_printed_flag)
+    {
+        for (int i = 0; i < argc; ++i)
+        {
+            std::cout << az_col_name[i] << " | ";
+        }
+
+        std::cout << "\n\n";        
+
+        headers_printed_flag = true;
+    }
+
+    // Print each row.
+    for (int i = 0; i < argc; ++i)
+    {
+        std::cout << (argv[i] ? argv[i] : "NULL") << " | ";
+    }
+
+    std::cout << "\n";
+
+    return 0;
+}
+
+bool print_table(const std::string table_name, sqlite3** p_db)
+{
+    char* err_msg = nullptr;
+
+    const std::string table_select_sql = "SELECT * FROM Staff";
+
+    int status = sqlite3_exec(*p_db, table_select_sql.c_str(), callback_print, nullptr, &err_msg);
+    if (status != SQLITE_OK)
+    {
+        std::cerr << "Error: table " << table_name << " select failed.\n";
+        std::cerr << "Error message: " << err_msg << "\n";
+        return false;
+    }
+
     std::cout << "-----------------------------------------------------------------------\n";
 
     return true;
@@ -187,17 +311,16 @@ int main(int argc, char** argv)
     }
 
     const std::string table_name = "Staff";
-    //TODO ze email a phonenum musi byt unique
     const std::string table_columns =
-        "ID INTEGER PRIMARY KEY           AUTOINCREMENT," \
-        "FirstName          VARCHAR(255)  NOT NULL," \
-        "LastName           VARCHAR(255)  NOT NULL," \
-        "Address            VARCHAR(255)  NOT NULL," \
-        "Salary             INTEGER       NOT NULL," \
-        "Email              VARCHAR(320)  NOT NULL," \
-        "ProfileImage       VARCHAR(4096)         ," \
-        "PhoneNum           VARCHAR(20)   NOT NULL," \
-        "TimeZone           VARCHAR(50)            ";
+        "ID INTEGER PRIMARY KEY           AUTOINCREMENT  ," \
+        "FirstName          VARCHAR(255)  NOT NULL       ," \
+        "LastName           VARCHAR(255)  NOT NULL       ," \
+        "Address            VARCHAR(255)  NOT NULL       ," \
+        "Salary             INTEGER       NOT NULL       ," \
+        "Email              VARCHAR(320)  NOT NULL UNIQUE," \
+        "ProfileImage       VARCHAR(4096)          UNIQUE," \
+        "PhoneNum           VARCHAR(20)   NOT NULL UNIQUE," \
+        "TimeZone           VARCHAR(50)                   ";
 
     success = create_table(table_name, table_columns, &p_db);
 
@@ -208,8 +331,6 @@ int main(int argc, char** argv)
     }
 
     const std::string table_columns_names = "FirstName, Address, Salary, LastName, Email, ProfileImage, PhoneNum, TimeZone";
-
-    //const std::string columns_values = "'Kenneth','3793 Columbia Mine Road',3200,'Prevost','kenneth@hello-world.com','staff/profiles/kenneth/avatar.png','255-48-5875','PST'";
 
     std::string table_record;
     while (std::getline(file, table_record))
@@ -222,7 +343,14 @@ int main(int argc, char** argv)
         {
             file.close();
             return error_code::table_insert_error;
-        }        
+        }
+    }
+
+    success = print_table(table_name, &p_db);
+
+    if (!success) {
+        file.close();
+        return error_code::sqlite_generic_error;
     }
 
     sqlite3_close(p_db);
