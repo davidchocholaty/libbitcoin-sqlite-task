@@ -1,5 +1,7 @@
 #include <boost/filesystem.hpp>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <sqlite3.h>
 
@@ -14,7 +16,8 @@ enum error_code
     db_create_error = 1,
     table_create_error = 2,
     table_insert_error = 3,
-    unknown_error = 4
+    file_open_error = 4,
+    unknown_error = 5
 };
 
 // Create a callback function  
@@ -168,11 +171,18 @@ int main(int argc, char** argv)
 {
     sqlite3* p_db = nullptr;
     const std::string db_filename = "dbschema.db";
+    std::ifstream file("../people.csv");
+
+    if (!file.is_open()) {
+        std::cerr << "Error: CSV file opening failed.\n";
+        return error_code::file_open_error;
+    }
 
     bool success = create_database(db_filename, &p_db);
 
     if (!success)
     {
+        file.close();
         return error_code::db_create_error;
     }
 
@@ -193,21 +203,30 @@ int main(int argc, char** argv)
 
     if (!success)
     {
+        file.close();
         return error_code::table_create_error;
     }
 
     const std::string table_columns_names = "FirstName, Address, Salary, LastName, Email, ProfileImage, PhoneNum, TimeZone";
 
-    const std::string columns_values = "'Kenneth','3793 Columbia Mine Road',3200,'Prevost','kenneth@hello-world.com','staff/profiles/kenneth/avatar.png','255-48-5875','PST'";
+    //const std::string columns_values = "'Kenneth','3793 Columbia Mine Road',3200,'Prevost','kenneth@hello-world.com','staff/profiles/kenneth/avatar.png','255-48-5875','PST'";
 
-    success = insert_table_record(table_name, table_columns_names, columns_values, &p_db);
-
-    if (!success)
+    std::string table_record;
+    while (std::getline(file, table_record))
     {
-        return error_code::table_insert_error;
+        std::cout << "Record: " << table_record << "\n";
+
+        success = insert_table_record(table_name, table_columns_names, table_record, &p_db);
+
+        if (!success)
+        {
+            file.close();
+            return error_code::table_insert_error;
+        }        
     }
 
     sqlite3_close(p_db);
+    file.close();
 
     return error_code::no_error;
 }
