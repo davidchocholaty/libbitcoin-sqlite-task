@@ -1,0 +1,122 @@
+Info: The database "dbschema.db" created successfully.
+-----------------------------------------------------------------------
+Info: The table was created successfully.
+-----------------------------------------------------------------------
+Record: 'Kenneth','3793 Columbia Mine Road',3200,'Prevost','kenneth@hello-world.com','staff/profiles/kenneth/avatar.png','255-48-5875','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Michael','1688 Strawberry Street',2800,'Sloan','michael@hello-world.com','staff/profiles/michael/avatar.png','572-48-1821','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'John','347 Hanover Drive',3580,'Brock','john@hello-world.com','staff/profiles/john/avatar.png','687-15-1788','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'William','916 Manor Station Avenue',3720,'Stewart','william@hello-world.com','staff/profiles/william/avatar.png','248-57-9833','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Kyle','545 Sherman Drive',2820,'Beverly','kyle@hello-world.com','staff/profiles/kyle/avatar.png','448-87-2655','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Tommy','8 Bank Ave',2350,'Deloera','tommy@hello-world.com','staff/profiles/tommy/avatar.png','785-22-1584','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Derek','81 Charles St.',2270,'Walls','derek@hello-world.com','staff/profiles/derek/avatar.png','789-78-1599','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Mavis','308 Charles Drive', 2610,'Marino','mavis@hello-world.com','staff/profiles/mavis/avatar.png','982-25-7822','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Judy','9903 Wild Horce Circle',3510,'White','judy@hello-world.com','staff/profiles/judy/avatar.png','165-95-4855','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Paul','234 Columbia St.',3440,'Barkley','paul@hello-world.com','staff/profiles/paul/avatar.png','245-73-2699','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+Record: 'Richard','7389 Middle River',2850,'Sedlak','richard@hello-world.com','staff/profiles/richard/avatar.png','245-57-2457','PST'
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+The created table print: 
+
+ID | FirstName | LastName | Address | Salary | Email | ProfileImage | PhoneNum | TimeZone | 
+
+1 | Kenneth | Prevost | 3793 Columbia Mine Road | 3200 | kenneth@hello-world.com | staff/profiles/kenneth/avatar.png | 255-48-5875 | PST | 
+2 | Michael | Sloan | 1688 Strawberry Street | 2800 | michael@hello-world.com | staff/profiles/michael/avatar.png | 572-48-1821 | PST | 
+3 | John | Brock | 347 Hanover Drive | 3580 | john@hello-world.com | staff/profiles/john/avatar.png | 687-15-1788 | PST | 
+4 | William | Stewart | 916 Manor Station Avenue | 3720 | william@hello-world.com | staff/profiles/william/avatar.png | 248-57-9833 | PST | 
+5 | Kyle | Beverly | 545 Sherman Drive | 2820 | kyle@hello-world.com | staff/profiles/kyle/avatar.png | 448-87-2655 | PST | 
+6 | Tommy | Deloera | 8 Bank Ave | 2350 | tommy@hello-world.com | staff/profiles/tommy/avatar.png | 785-22-1584 | PST | 
+7 | Derek | Walls | 81 Charles St. | 2270 | derek@hello-world.com | staff/profiles/derek/avatar.png | 789-78-1599 | PST | 
+8 | Mavis | Marino | 308 Charles Drive | 2610 | mavis@hello-world.com | staff/profiles/mavis/avatar.png | 982-25-7822 | PST | 
+9 | Judy | White | 9903 Wild Horce Circle | 3510 | judy@hello-world.com | staff/profiles/judy/avatar.png | 165-95-4855 | PST | 
+10 | Paul | Barkley | 234 Columbia St. | 3440 | paul@hello-world.com | staff/profiles/paul/avatar.png | 245-73-2699 | PST | 
+11 | Richard | Sedlak | 7389 Middle River | 2850 | richard@hello-world.com | staff/profiles/richard/avatar.png | 245-57-2457 | PST | 
+-----------------------------------------------------------------------
+************
+  QUERIES   
+************
+
+*******************************************************
+1. The staff with a salary greater or equal to 3500:
+*******************************************************
+
+ID | FirstName | LastName | Address | Salary | Email | ProfileImage | PhoneNum | TimeZone | 
+
+3 | John | Brock | 347 Hanover Drive | 3580 | john@hello-world.com | staff/profiles/john/avatar.png | 687-15-1788 | PST | 
+4 | William | Stewart | 916 Manor Station Avenue | 3720 | william@hello-world.com | staff/profiles/william/avatar.png | 248-57-9833 | PST | 
+9 | Judy | White | 9903 Wild Horce Circle | 3510 | judy@hello-world.com | staff/profiles/judy/avatar.png | 165-95-4855 | PST | 
+-----------------------------------------------------------------------
+*******************************************************
+2. Insert person Leonard Sloan into the table:
+*******************************************************
+
+Info: The record was inserted successfully into the Staff table.
+-----------------------------------------------------------------------
+ID | FirstName | LastName | Address | Salary | Email | ProfileImage | PhoneNum | TimeZone | 
+
+1 | Kenneth | Prevost | 3793 Columbia Mine Road | 3200 | kenneth@hello-world.com | staff/profiles/kenneth/avatar.png | 255-48-5875 | PST | 
+2 | Michael | Sloan | 1688 Strawberry Street | 2800 | michael@hello-world.com | staff/profiles/michael/avatar.png | 572-48-1821 | PST | 
+3 | John | Brock | 347 Hanover Drive | 3580 | john@hello-world.com | staff/profiles/john/avatar.png | 687-15-1788 | PST | 
+4 | William | Stewart | 916 Manor Station Avenue | 3720 | william@hello-world.com | staff/profiles/william/avatar.png | 248-57-9833 | PST | 
+5 | Kyle | Beverly | 545 Sherman Drive | 2820 | kyle@hello-world.com | staff/profiles/kyle/avatar.png | 448-87-2655 | PST | 
+6 | Tommy | Deloera | 8 Bank Ave | 2350 | tommy@hello-world.com | staff/profiles/tommy/avatar.png | 785-22-1584 | PST | 
+7 | Derek | Walls | 81 Charles St. | 2270 | derek@hello-world.com | staff/profiles/derek/avatar.png | 789-78-1599 | PST | 
+8 | Mavis | Marino | 308 Charles Drive | 2610 | mavis@hello-world.com | staff/profiles/mavis/avatar.png | 982-25-7822 | PST | 
+9 | Judy | White | 9903 Wild Horce Circle | 3510 | judy@hello-world.com | staff/profiles/judy/avatar.png | 165-95-4855 | PST | 
+10 | Paul | Barkley | 234 Columbia St. | 3440 | paul@hello-world.com | staff/profiles/paul/avatar.png | 245-73-2699 | PST | 
+11 | Richard | Sedlak | 7389 Middle River | 2850 | richard@hello-world.com | staff/profiles/richard/avatar.png | 245-57-2457 | PST | 
+12 | Leonard | Sloan | 1688 Strawberry Street | 2800 | leonard@hello-world.com | staff/profiles/leonard/avatar.png | 672-48-1451 | PST | 
+-----------------------------------------------------------------------
+*******************************************************
+3. The staff with a "Sloan" last name:
+*******************************************************
+
+ID | FirstName | LastName | Address | Salary | Email | ProfileImage | PhoneNum | TimeZone | 
+
+2 | Michael | Sloan | 1688 Strawberry Street | 2800 | michael@hello-world.com | staff/profiles/michael/avatar.png | 572-48-1821 | PST | 
+12 | Leonard | Sloan | 1688 Strawberry Street | 2800 | leonard@hello-world.com | staff/profiles/leonard/avatar.png | 672-48-1451 | PST | 
+-----------------------------------------------------------------------
+*******************************************************
+4. Update the phone number for a person with ID = 1. New phone number: 666-55-4444:
+*******************************************************
+
+Info: phone number updated successfully.
+-----------------------------------------------------------------------
+ID | FirstName | LastName | Address | Salary | Email | ProfileImage | PhoneNum | TimeZone | 
+
+1 | Kenneth | Prevost | 3793 Columbia Mine Road | 3200 | kenneth@hello-world.com | staff/profiles/kenneth/avatar.png | 666-55-4444 | PST | 
+2 | Michael | Sloan | 1688 Strawberry Street | 2800 | michael@hello-world.com | staff/profiles/michael/avatar.png | 572-48-1821 | PST | 
+3 | John | Brock | 347 Hanover Drive | 3580 | john@hello-world.com | staff/profiles/john/avatar.png | 687-15-1788 | PST | 
+4 | William | Stewart | 916 Manor Station Avenue | 3720 | william@hello-world.com | staff/profiles/william/avatar.png | 248-57-9833 | PST | 
+5 | Kyle | Beverly | 545 Sherman Drive | 2820 | kyle@hello-world.com | staff/profiles/kyle/avatar.png | 448-87-2655 | PST | 
+6 | Tommy | Deloera | 8 Bank Ave | 2350 | tommy@hello-world.com | staff/profiles/tommy/avatar.png | 785-22-1584 | PST | 
+7 | Derek | Walls | 81 Charles St. | 2270 | derek@hello-world.com | staff/profiles/derek/avatar.png | 789-78-1599 | PST | 
+8 | Mavis | Marino | 308 Charles Drive | 2610 | mavis@hello-world.com | staff/profiles/mavis/avatar.png | 982-25-7822 | PST | 
+9 | Judy | White | 9903 Wild Horce Circle | 3510 | judy@hello-world.com | staff/profiles/judy/avatar.png | 165-95-4855 | PST | 
+10 | Paul | Barkley | 234 Columbia St. | 3440 | paul@hello-world.com | staff/profiles/paul/avatar.png | 245-73-2699 | PST | 
+11 | Richard | Sedlak | 7389 Middle River | 2850 | richard@hello-world.com | staff/profiles/richard/avatar.png | 245-57-2457 | PST | 
+12 | Leonard | Sloan | 1688 Strawberry Street | 2800 | leonard@hello-world.com | staff/profiles/leonard/avatar.png | 672-48-1451 | PST | 
+-----------------------------------------------------------------------
+Info: Table dropped successfully.
+-----------------------------------------------------------------------
+Info: Database file 'dbschema.db' deleted successfully.
+-----------------------------------------------------------------------
