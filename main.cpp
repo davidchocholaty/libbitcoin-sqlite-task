@@ -707,9 +707,64 @@ int run_queries(const std::string table_name,
     return error_code::no_error;
 }
 
-// TODO funkce cleanup ktera provede vsechny uzavreni (db a souboru) a odstraneni tabulky a databaze. Pro validni i chybove ukonceni.
-// TODO ulozit do txt souboru finalni presmerovane vystup, at to nemusi spoustet.
-// TODO required sqlite a boost do README
+/**
+ * The function which deletes the table and database validly closes the 
+ * database connection and the input file.
+ * 
+ * @param db_filename Database file name including the .db extension.
+ * @param table_name  The name of a table to delete.
+ * @param file        The input file.
+ * @param p_db        Database connection pointer.
+ */
+int cleanup(const std::string db_filename,
+            const std::string table_name,
+            std::ifstream& file,
+            sqlite3** p_db)
+{
+    bool success = false;
+
+    if (table_name.compare("") == 0)
+    {
+        success = drop_table(table_name, p_db);    
+
+        sqlite3_close(*p_db);
+        p_db = nullptr;
+
+        if (!success)
+        {
+            // Even over the failure try to delete the whole database.
+            success = delete_database(db_filename);
+            file.close();
+            return error_code::sqlite_generic_error;
+        }
+    }
+    else
+    {
+        sqlite3_close(*p_db);
+        p_db = nullptr;
+    }
+    
+    success = delete_database(db_filename);
+
+    if (!success)
+    {
+        file.close();
+        return error_code::table_deletion_error;
+    }    
+
+    file.close();
+    
+    return error_code::no_error;
+}
+
+/**
+ * Main function of the program.
+ * 
+ * @param argc  The number of program arguments.
+ * @param argv  The list of program arguments.
+ * @return      If the program ends correctly, return zero ok status. Otherwise
+ *              returns the status value.
+*/
 int main(int argc, char** argv)
 {
     sqlite3* p_db = nullptr;
@@ -726,24 +781,22 @@ int main(int argc, char** argv)
 
     if (!success)
     {
-        sqlite3_close(p_db);
-        p_db = nullptr;
-
-        file.close();
+        // Because of the error ignore the cleanup return code.
+        cleanup(db_filename, "", file, &p_db);
         return error_code::db_create_error;
     }
 
-    /*
-    * Email can have a total length of 320 characters, so VARCHAR(320) data type is used instead of VARCHAR(255) for the Email column.
-    * https://www.mindbaz.com/en/email-deliverability/what-is-the-maximum-size-of-an-mail-address/
-    */
-    /* Linux's maximum path length is 4096 characters, so the VARCHAR(4096) data type is used instead of VARCHAR(255) for the ProfileImage column.
-    * https://unix.stackexchange.com/questions/32795/what-is-the-maximum-allowed-filename-and-folder-size-with-ecryptfs
-    */
-    /*
-    * Longest phone number is 15 character, so the VARCHAR(20) data type is used including reserve for spaces between numbers.
-    * https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s03.html
-    */
+    // Email can have a total length of 320 characters, so VARCHAR(320) data 
+    // type is used instead of VARCHAR(255) for the Email column.
+    // https://www.mindbaz.com/en/email-deliverability/what-is-the-maximum-size-of-an-mail-address/
+
+    // Linux's maximum path length is 4096 characters, so the VARCHAR(4096) 
+    // data type is used instead of VARCHAR(255) for the ProfileImage column.
+    // https://unix.stackexchange.com/questions/32795/what-is-the-maximum-allowed-filename-and-folder-size-with-ecryptfs
+
+    // The longest phone number is 15 characters, so the VARCHAR(20) data type 
+    // is used including reserving for spaces between numbers.
+    // https://www.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch04s03.html
     const std::string table_name = "Staff";
     const std::string table_columns =
         "ID INTEGER PRIMARY KEY           AUTOINCREMENT  ," \
@@ -760,14 +813,13 @@ int main(int argc, char** argv)
 
     if (!success)
     {
-        sqlite3_close(p_db);
-        p_db = nullptr;
-
-        file.close();
+        // Because of the error ignore the cleanup return code.
+        cleanup(db_filename, "", file, &p_db);
         return error_code::table_create_error;
     }
 
-    const std::string table_columns_names = "FirstName, Address, Salary, LastName, Email, ProfileImage, PhoneNum, TimeZone";
+    const std::string table_columns_names =
+        "FirstName, Address, Salary, LastName, Email, ProfileImage, PhoneNum, TimeZone";
 
     std::string table_record;
     while (std::getline(file, table_record))
@@ -778,10 +830,8 @@ int main(int argc, char** argv)
 
         if (!success)
         {
-            sqlite3_close(p_db);
-            p_db = nullptr;
-
-            file.close();
+            // Because of the error ignore the cleanup return code.
+            cleanup(db_filename, table_name, file, &p_db);
             return error_code::table_insert_error;
         }
     }
@@ -790,49 +840,29 @@ int main(int argc, char** argv)
 
     if (!success)
     {
-        sqlite3_close(p_db);
-        p_db = nullptr;
-
-        file.close();
+        // Because of the error ignore the cleanup return code.
+        cleanup(db_filename, table_name, file, &p_db);
         return error_code::sqlite_generic_error;
     }
 
     // Run queries.
-
     int err = run_queries(table_name, table_columns_names, &p_db);
 
     if (err != error_code::no_error)
     {
-        sqlite3_close(p_db);
-        p_db = nullptr;
-
-        file.close();
+        // Because of the error ignore the cleanup return code.
+        cleanup(db_filename, table_name, file, &p_db);
         return error_code::sqlite_generic_error;
     }
 
-    success = drop_table(table_name, &p_db);
-    
-    if (!success)
+    // Final cleanup.
+    int status = cleanup(db_filename, table_name, file, &p_db);
+
+    if (status != error_code::no_error)
     {
-        sqlite3_close(p_db);
-        p_db = nullptr;
-
-        file.close();
-        return error_code::sqlite_generic_error;
+        std::cerr << "Error: final cleanup failed.\n";
+        return status;
     }
-
-    sqlite3_close(p_db);
-    p_db = nullptr;
-
-    success = delete_database(db_filename);
-
-    if (!success)
-    {
-        file.close();
-        return error_code::table_deletion_error;
-    }
-
-    file.close();
 
     return error_code::no_error;
 }
