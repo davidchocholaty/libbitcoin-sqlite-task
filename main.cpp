@@ -616,7 +616,12 @@ bool delete_database(const std::string db_filename)
 int run_queries(const std::string table_name,
                 const std::string table_columns_names,
                 sqlite3** p_db)
-{   
+{
+    std::cout << "************\n";
+    std::cout << "  QUERIES   \n";
+    std::cout << "************\n\n";
+
+
     // *********************************************************************
     // 1. Select and print people with a salary greater or equal to 3500.
     // *********************************************************************
@@ -625,7 +630,9 @@ int run_queries(const std::string table_name,
     // Set the flag to false so the table headers will be printed for the first time.
     headers_printed_flag = false;
 
-    std::cout << "The staff with a salary greater or equal to " << threshold << ":\n\n";
+    std::cout << "*******************************************************\n";
+    std::cout << "1. The staff with a salary greater or equal to " << threshold << ":\n";
+    std::cout << "*******************************************************\n\n";
     int success = select_salary_threshold(table_name, threshold, p_db);
 
     if (!success)
@@ -637,7 +644,9 @@ int run_queries(const std::string table_name,
     // 2. Insert a new person. This person has the same last name as at least 
     //    one person who already is stored in the table.
     // *********************************************************************
-    std::cout << "Insert person Leonard Sloan into the table:\n\n";
+    std::cout << "*******************************************************\n";
+    std::cout << "2. Insert person Leonard Sloan into the table:\n";
+    std::cout << "*******************************************************\n\n";
     const std::string table_record =
         "'Leonard',"
         "'1688 Strawberry Street',"
@@ -672,7 +681,9 @@ int run_queries(const std::string table_name,
     // Set the flag to false so the table headers will be printed for the first time.
     headers_printed_flag = false;
 
-    std::cout << "The staff with a \"Sloan\" last name:\n\n";
+    std::cout << "*******************************************************\n";
+    std::cout << "3. The staff with a \"Sloan\" last name:\n";
+    std::cout << "*******************************************************\n\n";
 
     const std::string last_name = "Sloan";
     success = select_by_last_name(table_name, last_name, p_db);
@@ -685,7 +696,9 @@ int run_queries(const std::string table_name,
     // *********************************************************************
     // 4. Update the phone number for the person with a specific identifier (ID = 1).
     // *********************************************************************
-    std::cout << "Update the phone number for a person with ID = 1. New phone number: 666-55-4444:\n\n";
+    std::cout << "*******************************************************\n";
+    std::cout << "4. Update the phone number for a person with ID = 1. New phone number: 666-55-4444:\n";
+    std::cout << "*******************************************************\n\n";
 
     success = update_phone_number(table_name, 1, "666-55-4444", p_db);
 
@@ -721,9 +734,9 @@ int cleanup(const std::string db_filename,
             std::ifstream& file,
             sqlite3** p_db)
 {
-    bool success = false;
+    bool success = false;    
 
-    if (table_name.compare("") == 0)
+    if (table_name.compare("") != 0)
     {
         success = drop_table(table_name, p_db);    
 
@@ -835,6 +848,8 @@ int main(int argc, char** argv)
             return error_code::table_insert_error;
         }
     }
+
+    std::cout << "The created table print: \n\n";
 
     success = print_table(table_name, &p_db);
 
